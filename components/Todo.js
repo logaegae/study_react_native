@@ -26,7 +26,8 @@ export default class Todo extends Component {
         updateToDo : PropTypes.func.isRequired
     }
 
-    __toggleComplete = () => {
+    __toggleComplete = (event) => {
+        event.stopPropagation();
         const { isCompleted, completeToDo, uncompleteToDo, id } = this.props;
         if(isCompleted) {
             uncompleteToDo(id);
@@ -35,13 +36,15 @@ export default class Todo extends Component {
         }
     }
 
-    __startEditing = () => {
+    __startEditing = (event) => {
+        event.stopPropagation();
         this.setState({
             isEditing : true
         });
     }
 
-    __finishEditing = () => {
+    __finishEditing = (event) => {
+        event.stopPropagation();
         const { toDoValue } = this.state;
         const { id, updateToDo } = this.props;
         updateToDo(id, toDoValue);
@@ -91,7 +94,10 @@ export default class Todo extends Component {
                                 <FontAwesome name="pencil" size={25} color="#353535"/>
                             </View>
                         </TouchableOpacity>
-                        <TouchableOpacity onPressOut={()=>{deleteToDo(id)}}>
+                        <TouchableOpacity onPressOut={(event)=>{
+                            event.stopPropagation();
+                            deleteToDo(id);
+                        }}>
                             <View style={styles.actionsContainer}>
                                 <FontAwesome name="close" size={25} color="#353535"/>
                             </View>

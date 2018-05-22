@@ -26,13 +26,14 @@ export default class App extends React.Component {
   __loadToDos = async () => {
     try {
       const toDos = await AsyncStorage.getItem("toDos");
-      this.setState({})
+      const parsedToDos = JSON.parse(toDos);
+      this.setState({
+        loadedToDos : true,
+        toDos : parsedToDos || {}
+      });
     }catch(e){
       alert(e);
     }
-    this.setState({
-      loadedToDos : true
-    });
   }
 
   __addToDo = () => {
@@ -56,6 +57,7 @@ export default class App extends React.Component {
             ...newToDoObj
           }
         }
+        this.__saveToDos(newState.toDos);
         return {...newState};
       })
     }
@@ -69,7 +71,7 @@ export default class App extends React.Component {
             ...prevState,
             toDos
         };
-        this.__saveToDos(newState);
+        this.__saveToDos(newState.toDos);
         return {...newState}
     })
   }
@@ -86,7 +88,7 @@ export default class App extends React.Component {
           }
         }
       };
-      this.__saveToDos(newState);
+      this.__saveToDos(newState.toDos);
       return {...newState};
     });
   }
@@ -103,7 +105,7 @@ export default class App extends React.Component {
           }
         }
       };
-      this.__saveToDos(newState);
+      this.__saveToDos(newState.toDos);
       return {...newState};
     });
   }
@@ -120,13 +122,12 @@ export default class App extends React.Component {
           }
         }
       }
-      this.__saveToDos(newState);
+      this.__saveToDos(newState.toDos);
       return {...newState};
     });
   }
 
   __saveToDos = (newToDos) => {
-    console.log(newToDos)
     const saveToDos = AsyncStorage.setItem("toDos", JSON.stringify(newToDos));
   }
 
@@ -151,7 +152,7 @@ export default class App extends React.Component {
           >
           </TextInput>
           <ScrollView contentContainerStyle={styles.toDos}>
-            {Object.values(toDos).map(toDo => 
+            {Object.values(toDos).reverse().map(toDo => 
               <Todo
                 key={toDo.id}
                 {...toDo}
