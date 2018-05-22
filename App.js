@@ -1,12 +1,20 @@
 import React from 'react';
-import { StyleSheet, Text, View, StatusBar, TextInput, Dimensions, Platform, ScrollView  } from 'react-native';
+import { StyleSheet, Text, View, StatusBar, TextInput, Dimensions, Platform, ScrollView, AsyncStorage  } from 'react-native';
 import Todo from './components/Todo';
+import { AppLoading } from 'expo';
+import uuidv1 from 'uuid/v1';
 
 const { height, width } = Dimensions.get("window");
 
 export default class App extends React.Component {
   state = {
-    newToDo : ""
+    newToDo : "",
+    toDos : {},
+    loadedToDos : false
+  }
+
+  componentDidMount(){
+    this.__loadToDos();
   }
 
   __contorlNewToDo = text => {
@@ -15,8 +23,118 @@ export default class App extends React.Component {
     })
   }
 
-  render() {
+  __loadToDos = async () => {
+    try {
+      const toDos = await AsyncStorage.getItem("toDos");
+      this.setState({})
+    }catch(e){
+      alert(e);
+    }
+    this.setState({
+      loadedToDos : true
+    });
+  }
+
+  __addToDo = () => {
     const { newToDo } = this.state;
+    if(newToDo !== ""){
+      this.setState(prevState => {
+        const ID = uuidv1();
+        const newToDoObj = {
+          [ID] : {
+            id : ID,
+            isCompleted : false,
+            text : newToDo,
+            createAt : Date.now()
+          }
+        }
+        const newState = {
+          ...prevState,
+          newToDo : "",
+          toDos : {
+            ...prevState.toDos,
+            ...newToDoObj
+          }
+        }
+        return {...newState};
+      })
+    }
+  }
+
+  __deleteToDo = (id) => {
+      this.setState(prevState => {
+        const toDos = prevState.toDos;
+        delete toDos[id];
+        const newState = {
+            ...prevState,
+            toDos
+        };
+        this.__saveToDos(newState);
+        return {...newState}
+    })
+  }
+
+  __uncompleteToDo = (id) => {
+    this.setState(prevState => {
+      const newState = {
+        ...prevState,
+        toDos : {
+          ...prevState.toDos,
+          [id] : {
+            ...prevState.toDos[id],
+            isCompleted: false
+          }
+        }
+      };
+      this.__saveToDos(newState);
+      return {...newState};
+    });
+  }
+
+  __completeToDo = (id) => {
+    this.setState(prevState => {
+      const newState = {
+        ...prevState,
+        toDos : {
+          ...prevState.toDos,
+          [id] : {
+            ...prevState.toDos[id],
+            isCompleted: true
+          }
+        }
+      };
+      this.__saveToDos(newState);
+      return {...newState};
+    });
+  }
+
+  __updateToDo = (id, text) => {
+    this.setState(prevState => {
+      const newState = {
+        ...prevState,
+        toDos : {
+          ...prevState.toDos,
+          [id] : {
+            ...prevState.toDos[id],
+            text
+          }
+        }
+      }
+      this.__saveToDos(newState);
+      return {...newState};
+    });
+  }
+
+  __saveToDos = (newToDos) => {
+    console.log(newToDos)
+    const saveToDos = AsyncStorage.setItem("toDos", JSON.stringify(newToDos));
+  }
+
+  render() {
+    const { newToDo, loadedToDos, toDos } = this.state;
+    if(!loadedToDos){
+      return <AppLoading/>;
+    }
     return (
       <View style={styles.container}>
         <StatusBar barstyle="light-content" />
@@ -26,13 +144,22 @@ export default class App extends React.Component {
             style={styles.input}
             underlineColorAndroid="transparent"
             placeholder={"New To Do"}
+            placeholderTextColor={"#999"}
             value={newToDo}
             onChangeText={this.__contorlNewToDo}
-            placeholderTextColor={"#999"}
+            onSubmitEditing={this.__addToDo}
           >
           </TextInput>
-          <ScrollView>
-            <Todo/>
+          <ScrollView contentContainerStyle={styles.toDos}>
+            {Object.values(toDos).map(toDo => 
+              <Todo
+                key={toDo.id}
+                {...toDo}
+                deleteToDo={this.__deleteToDo}
+                uncompleteToDo={this.__uncompleteToDo}
+                completeToDo={this.__completeToDo}
+                updateToDo={this.__updateToDo}
+              />)}
           </ScrollView>
         </View>
       </View>
@@ -79,5 +206,8 @@ const styles = StyleSheet.create({
     borderBottomColor : '#BBB',
     borderBottomWidth : 1,
     fontSize : 25
+  },
+  toDos : {
+    alignItems : "center"
   }
 });
